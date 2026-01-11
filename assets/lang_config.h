@@ -32,6 +32,7 @@ extern "C" {
 #define VOLUME "Volume "
 #define MUTED "Muted"
 #define MAX_VOLUME "Max Volume"
+#define WORD_LEARNER_DISPLAY_ONLY "Word learner replies are text-only."
 
 #ifdef __cplusplus
 }
