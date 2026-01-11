@@ -1,0 +1,30 @@
+{
+    "language": {
+        "type" :"en-US"
+    },
+    "strings": {
+        "VERSION": "Version ",
+        "INITIALIZING": "Initializing...",
+        "REGISTERING_NETWORK": "Joining Network...",
+        "CONNECT_SERVER": "Connecting Cloud...",
+
+        "STANDBY": "Standby",
+        "CONNECT_TO": "Connect to ",
+        "CONNECTING": "Connecting...",
+        "CONNECTED_TO": "Connected to ",
+
+        "LISTENING": "Listening...",
+        "SPEAKING": "Speaking...",
+
+        "HOLD_TALK": "Hold to Talk",
+        "TRIG_TALK": "Press to Talk",
+        "WAKEUP_TALK": "Wake Word",
+        "FREE_TALK": "Free Chat",
+
+        "ENTERING_WIFI_CONFIG_MODE": "Wifi Config Mode...",
+
+        "VOLUME": "Volume ",
+        "MUTED": "Muted",
+        "MAX_VOLUME": "Max Volume"
+    }
+}
