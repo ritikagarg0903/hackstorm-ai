@@ -35,11 +35,7 @@
 #define AI_AUDIO_TEXT_SHOW_LEN (60 * 3)
 #define ASR_NORMALIZED_TEXT_MAX (256)
 
-extern const char *word_learner_next_word(void) __attribute__((weak));
-extern const char *word_learner_current_word(void) __attribute__((weak));
-extern const char *word_learner_get_meaning(const char *word) __attribute__((weak));
-extern const char *word_learner_get_sentence(const char *word) __attribute__((weak));
-extern const char *word_learner_get_spelling(const char *word) __attribute__((weak));
+#include "word_learner.h"
 
 typedef uint8_t APP_CHAT_MODE_E;
 /*Press and hold button to start a single conversation.*/
@@ -203,6 +199,20 @@ static void __app_send_assistant_msg(const char *text)
 #endif
 }
 
+static void __app_send_word_learner_card(void)
+{
+    WORD_LEARNER_DISPLAY_T card = {0};
+
+    word_learner_fill_display(&card);
+#if defined(ENABLE_CHAT_DISPLAY) && (ENABLE_CHAT_DISPLAY == 1)
+    app_display_send_msg(TY_DISPLAY_TP_WORD_LEARNER_CARD, (uint8_t *)&card, sizeof(card));
+    app_display_send_msg(TY_DISPLAY_TP_NOTIFICATION, (uint8_t *)WORD_LEARNER_PROMPT_NEXT,
+                         strlen(WORD_LEARNER_PROMPT_NEXT));
+#else
+    PR_NOTICE("WORD LEARNER: %s - %s", card.word, card.meaning);
+#endif
+}
+
 static void __app_send_system_msg(const char *text)
 {
     if ((NULL == text) || ('\0' == text[0])) {
@@ -244,21 +254,18 @@ static bool __app_handle_word_learner_intent(const uint8_t *data, uint32_t len)
     }
 
     if (want_next) {
-        if (word_learner_next_word) {
-            word = word_learner_next_word();
-        }
+        word = word_learner_next_word();
         if ((NULL == word) || ('\0' == word[0])) {
             __app_send_system_msg("No new word is available yet.");
         } else {
             snprintf(response, sizeof(response), "New word: %s", word);
             __app_send_assistant_msg(response);
+            __app_send_word_learner_card();
         }
         return true;
     }
 
-    if (word_learner_current_word) {
-        word = word_learner_current_word();
-    }
+    word = word_learner_current_word();
 
     if ((NULL == word) || ('\0' == word[0])) {
         __app_send_system_msg("No word selected yet. Say \"next word\" to pick one.");
@@ -266,9 +273,7 @@ static bool __app_handle_word_learner_intent(const uint8_t *data, uint32_t len)
     }
 
     if (want_meaning) {
-        if (word_learner_get_meaning) {
-            detail = word_learner_get_meaning(word);
-        }
+        detail = word_learner_get_meaning();
 
         if ((NULL == detail) || ('\0' == detail[0])) {
             snprintf(response, sizeof(response), "No definition found for \"%s\".", word);
@@ -276,14 +281,13 @@ static bool __app_handle_word_learner_intent(const uint8_t *data, uint32_t len)
         } else {
             snprintf(response, sizeof(response), "Meaning of %s: %s", word, detail);
             __app_send_assistant_msg(response);
+            __app_send_word_learner_card();
         }
         return true;
     }
 
     if (want_sentence) {
-        if (word_learner_get_sentence) {
-            detail = word_learner_get_sentence(word);
-        }
+        detail = word_learner_get_sentence();
 
         if ((NULL == detail) || ('\0' == detail[0])) {
             snprintf(response, sizeof(response), "No example sentence found for \"%s\".", word);
@@ -291,14 +295,13 @@ static bool __app_handle_word_learner_intent(const uint8_t *data, uint32_t len)
         } else {
             snprintf(response, sizeof(response), "Sentence for %s: %s", word, detail);
             __app_send_assistant_msg(response);
+            __app_send_word_learner_card();
         }
         return true;
     }
 
     if (want_spelling) {
-        if (word_learner_get_spelling) {
-            detail = word_learner_get_spelling(word);
-        }
+        detail = word_learner_get_spelling();
 
         if ((NULL == detail) || ('\0' == detail[0])) {
             snprintf(response, sizeof(response), "No spelling available for \"%s\".", word);
@@ -306,6 +309,7 @@ static bool __app_handle_word_learner_intent(const uint8_t *data, uint32_t len)
         } else {
             snprintf(response, sizeof(response), "Spelling of %s: %s", word, detail);
             __app_send_assistant_msg(response);
+            __app_send_word_learner_card();
         }
         return true;
     }

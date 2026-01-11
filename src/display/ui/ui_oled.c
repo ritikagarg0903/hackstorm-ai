@@ -9,6 +9,8 @@
 
 #if defined(ENABLE_GUI_OLED) && (ENABLE_GUI_OLED == 1)
 
+#include <stdio.h>
+
 #include "ui_display.h"
 
 #include "font_awesome_symbols.h"
@@ -355,6 +357,25 @@ void ui_set_status_bar_pad(int32_t value)
 
     lv_obj_set_style_pad_left(sg_ui.ui.status_bar, value, 0);
     lv_obj_set_style_pad_right(sg_ui.ui.status_bar, value, 0);
+}
+
+void ui_set_word_learner_card(const WORD_LEARNER_DISPLAY_T *card)
+{
+    if (sg_ui.ui.chat_message_label == NULL || card == NULL) {
+        return;
+    }
+
+    char content[320];
+    snprintf(content, sizeof(content),
+             "%s %s | %s %s | %s %s | %s %s | %s %s | %s %s",
+             WORD_LEARNER_WORD_LABEL, card->word,
+             WORD_LEARNER_PART_OF_SPEECH_LABEL, card->part_of_speech,
+             WORD_LEARNER_DIFFICULTY_LABEL, card->difficulty,
+             WORD_LEARNER_MEANING_LABEL, card->meaning,
+             WORD_LEARNER_SENTENCE_LABEL, card->sample_sentence,
+             WORD_LEARNER_SPELLING_LABEL, card->spelling);
+
+    lv_label_set_text(sg_ui.ui.chat_message_label, content);
 }
 
 #endif

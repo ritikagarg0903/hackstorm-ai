@@ -33,6 +33,14 @@ extern "C" {
 #define MUTED "Muted"
 #define MAX_VOLUME "Max Volume"
 #define WORD_LEARNER_DISPLAY_ONLY "Word learner replies are text-only."
+#define WORD_LEARNER_TITLE "Word Learner"
+#define WORD_LEARNER_WORD_LABEL "Word:"
+#define WORD_LEARNER_PART_OF_SPEECH_LABEL "Part of Speech:"
+#define WORD_LEARNER_DIFFICULTY_LABEL "Difficulty:"
+#define WORD_LEARNER_MEANING_LABEL "Meaning:"
+#define WORD_LEARNER_SENTENCE_LABEL "Sentence:"
+#define WORD_LEARNER_SPELLING_LABEL "Spelling:"
+#define WORD_LEARNER_PROMPT_NEXT "Say \"next word\" to continue."
 
 #ifdef __cplusplus
 }

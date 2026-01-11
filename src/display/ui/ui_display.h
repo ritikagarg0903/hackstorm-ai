@@ -71,6 +71,8 @@ void ui_set_chat_mode(const char *chat_mode);
 
 void ui_set_status_bar_pad(int32_t value);
 
+void ui_set_word_learner_card(const WORD_LEARNER_DISPLAY_T *card);
+
 #if defined(ENABLE_GUI_STREAM_AI_TEXT) && (ENABLE_GUI_STREAM_AI_TEXT == 1)
 void ui_set_assistant_msg_stream_start(void);
 

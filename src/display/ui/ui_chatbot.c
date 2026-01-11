@@ -16,6 +16,8 @@
 
 #if defined(ENABLE_GUI_CHATBOT) && (ENABLE_GUI_CHATBOT == 1)
 
+#include <stdio.h>
+
 #include "ui_display.h"
 
 #include "font_awesome_symbols.h"
@@ -47,6 +49,8 @@ typedef struct {
     lv_obj_t *content;
     lv_obj_t *emotion_label;
     lv_obj_t *chat_message_label;
+    lv_obj_t *word_title_label;
+    lv_obj_t *word_content_label;
     lv_obj_t *status_label;
     lv_obj_t *network_label;
     lv_obj_t *notification_label;
@@ -182,6 +186,22 @@ int ui_init(UI_FONT_T *ui_font)
     lv_obj_set_style_text_align(sg_ui.ui.chat_message_label, LV_TEXT_ALIGN_CENTER, 0); // Set text to center alignment
     lv_label_set_text(sg_ui.ui.chat_message_label, "");
 
+    // Word learner title
+    sg_ui.ui.word_title_label = lv_label_create(sg_ui.ui.content);
+    lv_obj_set_style_text_font(sg_ui.ui.word_title_label, sg_ui.font.text, 0);
+    lv_obj_set_style_text_color(sg_ui.ui.word_title_label, sg_ui.theme.text, 0);
+    lv_obj_set_style_text_align(sg_ui.ui.word_title_label, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_text(sg_ui.ui.word_title_label, "");
+    lv_obj_add_flag(sg_ui.ui.word_title_label, LV_OBJ_FLAG_HIDDEN);
+
+    // Word learner content
+    sg_ui.ui.word_content_label = lv_label_create(sg_ui.ui.content);
+    lv_obj_set_width(sg_ui.ui.word_content_label, LV_HOR_RES * 0.9);
+    lv_label_set_long_mode(sg_ui.ui.word_content_label, LV_LABEL_LONG_WRAP);
+    lv_obj_set_style_text_align(sg_ui.ui.word_content_label, LV_TEXT_ALIGN_LEFT, 0);
+    lv_label_set_text(sg_ui.ui.word_content_label, "");
+    lv_obj_add_flag(sg_ui.ui.word_content_label, LV_OBJ_FLAG_HIDDEN);
+
     // Status bar
     // lv_obj_set_flex_flow(sg_ui.ui.status_bar, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_all(sg_ui.ui.status_bar, 0, 0);
@@ -228,6 +248,10 @@ void ui_set_user_msg(const char *text)
         return;
     }
 
+    lv_obj_add_flag(sg_ui.ui.word_title_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(sg_ui.ui.word_content_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(sg_ui.ui.chat_message_label, LV_OBJ_FLAG_HIDDEN);
+
     lv_label_set_text(sg_ui.ui.chat_message_label, text);
     lv_obj_set_style_bg_color(sg_ui.ui.chat_message_label, sg_ui.theme.user_bubble, 0);
     lv_obj_set_style_text_color(sg_ui.ui.chat_message_label, sg_ui.theme.text, 0);
@@ -239,6 +263,10 @@ void ui_set_assistant_msg(const char *text)
         return;
     }
 
+    lv_obj_add_flag(sg_ui.ui.word_title_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(sg_ui.ui.word_content_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(sg_ui.ui.chat_message_label, LV_OBJ_FLAG_HIDDEN);
+
     lv_label_set_text(sg_ui.ui.chat_message_label, text);
     lv_obj_set_style_bg_color(sg_ui.ui.chat_message_label, sg_ui.theme.assistant_bubble, 0);
     lv_obj_set_style_text_color(sg_ui.ui.chat_message_label, sg_ui.theme.text, 0);
@@ -249,6 +277,10 @@ void ui_set_system_msg(const char *text)
     if (sg_ui.ui.chat_message_label == NULL) {
         return;
     }
+
+    lv_obj_add_flag(sg_ui.ui.word_title_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_add_flag(sg_ui.ui.word_content_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(sg_ui.ui.chat_message_label, LV_OBJ_FLAG_HIDDEN);
 
     lv_label_set_text(sg_ui.ui.chat_message_label, text);
     lv_obj_set_style_bg_color(sg_ui.ui.chat_message_label, sg_ui.theme.system_bubble, 0);
@@ -326,6 +358,33 @@ void ui_set_status_bar_pad(int32_t value)
 
     lv_obj_set_style_pad_left(sg_ui.ui.status_bar, value, 0);
     lv_obj_set_style_pad_right(sg_ui.ui.status_bar, value, 0);
+}
+
+void ui_set_word_learner_card(const WORD_LEARNER_DISPLAY_T *card)
+{
+    if ((NULL == sg_ui.ui.word_title_label) || (NULL == sg_ui.ui.word_content_label) || (NULL == card)) {
+        return;
+    }
+
+    lv_obj_add_flag(sg_ui.ui.chat_message_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(sg_ui.ui.word_title_label, LV_OBJ_FLAG_HIDDEN);
+    lv_obj_clear_flag(sg_ui.ui.word_content_label, LV_OBJ_FLAG_HIDDEN);
+
+    lv_label_set_text(sg_ui.ui.word_title_label, WORD_LEARNER_TITLE);
+    lv_obj_set_style_text_color(sg_ui.ui.word_title_label, sg_ui.theme.text, 0);
+
+    char content[512];
+    snprintf(content, sizeof(content),
+             "%s %s\n%s %s\n%s %s\n%s %s\n%s %s\n%s %s",
+             WORD_LEARNER_WORD_LABEL, card->word,
+             WORD_LEARNER_PART_OF_SPEECH_LABEL, card->part_of_speech,
+             WORD_LEARNER_DIFFICULTY_LABEL, card->difficulty,
+             WORD_LEARNER_MEANING_LABEL, card->meaning,
+             WORD_LEARNER_SENTENCE_LABEL, card->sample_sentence,
+             WORD_LEARNER_SPELLING_LABEL, card->spelling);
+
+    lv_label_set_text(sg_ui.ui.word_content_label, content);
+    lv_obj_set_style_text_color(sg_ui.ui.word_content_label, sg_ui.theme.text, 0);
 }
 
 #endif

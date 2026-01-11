@@ -26,5 +26,14 @@
         "VOLUME": "Volume ",
         "MUTED": "Muted",
         "MAX_VOLUME": "Max Volume"
+        ,
+        "WORD_LEARNER_TITLE": "Word Learner",
+        "WORD_LEARNER_WORD_LABEL": "Word:",
+        "WORD_LEARNER_PART_OF_SPEECH_LABEL": "Part of Speech:",
+        "WORD_LEARNER_DIFFICULTY_LABEL": "Difficulty:",
+        "WORD_LEARNER_MEANING_LABEL": "Meaning:",
+        "WORD_LEARNER_SENTENCE_LABEL": "Sentence:",
+        "WORD_LEARNER_SPELLING_LABEL": "Spelling:",
+        "WORD_LEARNER_PROMPT_NEXT": "Say \"next word\" to continue."
     }
 }
