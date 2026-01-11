@@ -6,6 +6,10 @@
  */
 #include "netmgr.h"
 
+#include <ctype.h>
+#include <stdio.h>
+#include <string.h>
+
 #include "tkl_wifi.h"
 #include "tkl_gpio.h"
 #include "tkl_memory.h"
@@ -29,6 +33,13 @@
 ***********************************************************/
 #define AI_AUDIO_TEXT_BUFF_LEN (1024)
 #define AI_AUDIO_TEXT_SHOW_LEN (60 * 3)
+#define ASR_NORMALIZED_TEXT_MAX (256)
+
+extern const char *word_learner_next_word(void) __attribute__((weak));
+extern const char *word_learner_current_word(void) __attribute__((weak));
+extern const char *word_learner_get_meaning(const char *word) __attribute__((weak));
+extern const char *word_learner_get_sentence(const char *word) __attribute__((weak));
+extern const char *word_learner_get_spelling(const char *word) __attribute__((weak));
 
 typedef uint8_t APP_CHAT_MODE_E;
 /*Press and hold button to start a single conversation.*/
@@ -135,6 +146,173 @@ static TDL_BUTTON_HANDLE sg_button_hdl = NULL;
 /***********************************************************
 ***********************function define**********************
 ***********************************************************/
+static uint32_t __app_normalize_asr_text(const uint8_t *data, uint32_t len, char *out, uint32_t out_len)
+{
+    uint32_t i = 0;
+    uint32_t out_idx = 0;
+    uint32_t start = 0;
+    uint32_t end = 0;
+
+    if ((NULL == data) || (0 == len) || (NULL == out) || (out_len < 2)) {
+        return 0;
+    }
+
+    if (len >= out_len) {
+        len = out_len - 1;
+    }
+
+    for (i = 0; i < len; i++) {
+        out[out_idx++] = (char)tolower((unsigned char)data[i]);
+    }
+    out[out_idx] = '\0';
+
+    while ((start < out_idx) && (isspace((unsigned char)out[start]) || ispunct((unsigned char)out[start]))) {
+        start++;
+    }
+
+    end = out_idx;
+    while ((end > start) && (isspace((unsigned char)out[end - 1]) || ispunct((unsigned char)out[end - 1]))) {
+        end--;
+    }
+
+    if (start > 0) {
+        memmove(out, out + start, end - start);
+    }
+    out[end - start] = '\0';
+    return (end - start);
+}
+
+static bool __app_asr_contains_phrase(const char *text, const char *phrase)
+{
+    if ((NULL == text) || (NULL == phrase)) {
+        return false;
+    }
+
+    return (strstr(text, phrase) != NULL);
+}
+
+static void __app_send_assistant_msg(const char *text)
+{
+    if ((NULL == text) || ('\0' == text[0])) {
+        return;
+    }
+#if defined(ENABLE_CHAT_DISPLAY) && (ENABLE_CHAT_DISPLAY == 1)
+    app_display_send_msg(TY_DISPLAY_TP_ASSISTANT_MSG, (uint8_t *)text, strlen(text));
+#else
+    PR_NOTICE("AI: %s", text);
+#endif
+}
+
+static void __app_send_system_msg(const char *text)
+{
+    if ((NULL == text) || ('\0' == text[0])) {
+        return;
+    }
+#if defined(ENABLE_CHAT_DISPLAY) && (ENABLE_CHAT_DISPLAY == 1)
+    app_display_send_msg(TY_DISPLAY_TP_SYSTEM_MSG, (uint8_t *)text, strlen(text));
+#else
+    PR_NOTICE("SYSTEM: %s", text);
+#endif
+}
+
+static bool __app_handle_word_learner_intent(const uint8_t *data, uint32_t len)
+{
+    char normalized[ASR_NORMALIZED_TEXT_MAX];
+    char response[ASR_NORMALIZED_TEXT_MAX];
+    const char *word = NULL;
+    const char *detail = NULL;
+    uint32_t normalized_len = 0;
+    bool want_next = false;
+    bool want_meaning = false;
+    bool want_sentence = false;
+    bool want_spelling = false;
+
+    normalized_len = __app_normalize_asr_text(data, len, normalized, sizeof(normalized));
+    if (0 == normalized_len) {
+        return false;
+    }
+
+    want_next = __app_asr_contains_phrase(normalized, "next word") || __app_asr_contains_phrase(normalized, "new word");
+    want_meaning = __app_asr_contains_phrase(normalized, "meaning") || __app_asr_contains_phrase(normalized, "definition");
+    want_sentence = __app_asr_contains_phrase(normalized, "use it in a sentence") ||
+                    __app_asr_contains_phrase(normalized, "sentence");
+    want_spelling =
+        __app_asr_contains_phrase(normalized, "spelling") || __app_asr_contains_phrase(normalized, "spell");
+
+    if (!(want_next || want_meaning || want_sentence || want_spelling)) {
+        return false;
+    }
+
+    if (want_next) {
+        if (word_learner_next_word) {
+            word = word_learner_next_word();
+        }
+        if ((NULL == word) || ('\0' == word[0])) {
+            __app_send_system_msg("No new word is available yet.");
+        } else {
+            snprintf(response, sizeof(response), "New word: %s", word);
+            __app_send_assistant_msg(response);
+        }
+        return true;
+    }
+
+    if (word_learner_current_word) {
+        word = word_learner_current_word();
+    }
+
+    if ((NULL == word) || ('\0' == word[0])) {
+        __app_send_system_msg("No word selected yet. Say \"next word\" to pick one.");
+        return true;
+    }
+
+    if (want_meaning) {
+        if (word_learner_get_meaning) {
+            detail = word_learner_get_meaning(word);
+        }
+
+        if ((NULL == detail) || ('\0' == detail[0])) {
+            snprintf(response, sizeof(response), "No definition found for \"%s\".", word);
+            __app_send_system_msg(response);
+        } else {
+            snprintf(response, sizeof(response), "Meaning of %s: %s", word, detail);
+            __app_send_assistant_msg(response);
+        }
+        return true;
+    }
+
+    if (want_sentence) {
+        if (word_learner_get_sentence) {
+            detail = word_learner_get_sentence(word);
+        }
+
+        if ((NULL == detail) || ('\0' == detail[0])) {
+            snprintf(response, sizeof(response), "No example sentence found for \"%s\".", word);
+            __app_send_system_msg(response);
+        } else {
+            snprintf(response, sizeof(response), "Sentence for %s: %s", word, detail);
+            __app_send_assistant_msg(response);
+        }
+        return true;
+    }
+
+    if (want_spelling) {
+        if (word_learner_get_spelling) {
+            detail = word_learner_get_spelling(word);
+        }
+
+        if ((NULL == detail) || ('\0' == detail[0])) {
+            snprintf(response, sizeof(response), "No spelling available for \"%s\".", word);
+            __app_send_system_msg(response);
+        } else {
+            snprintf(response, sizeof(response), "Spelling of %s: %s", word, detail);
+            __app_send_assistant_msg(response);
+        }
+        return true;
+    }
+
+    return false;
+}
+
 static void __app_ai_audio_evt_inform_cb(AI_AUDIO_EVENT_E event, uint8_t *data, uint32_t len, void *arg)
 {
 #if defined(ENABLE_CHAT_DISPLAY) && (ENABLE_CHAT_DISPLAY == 1)
@@ -154,6 +332,7 @@ static void __app_ai_audio_evt_inform_cb(AI_AUDIO_EVENT_E event, uint8_t *data, 
             // Ubuntu console logging
             PR_NOTICE("USER: %.*s", (int)len, data);
 #endif
+            __app_handle_word_learner_intent(data, len);
         }
     } break;
     case AI_AUDIO_EVT_AI_REPLIES_TEXT_START: {
