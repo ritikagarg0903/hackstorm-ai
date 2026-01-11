@@ -482,6 +482,34 @@ static void __app_ai_audio_state_inform_cb(AI_AUDIO_STATE_E state)
     }
 }
 
+static void __app_word_learner_tts_or_note(const char *response)
+{
+    (void)response;
+    // NOTE: The Tuya SDK in this project does not expose a text-to-speech API for ai_audio_* or tuya_ai_client.
+    // Word-learner responses are display-only until a TTS entrypoint is provided by the SDK.
+#if defined(ENABLE_CHAT_DISPLAY) && (ENABLE_CHAT_DISPLAY == 1)
+    app_display_send_msg(TY_DISPLAY_TP_SYSTEM_MSG, (uint8_t *)WORD_LEARNER_DISPLAY_ONLY,
+                         strlen(WORD_LEARNER_DISPLAY_ONLY));
+#else
+    PR_NOTICE("Word learner replies are display-only (no TTS API available).");
+#endif
+}
+
+void app_chat_bot_handle_word_learner_response(const char *response)
+{
+    if (response == NULL || response[0] == '\0') {
+        return;
+    }
+
+#if defined(ENABLE_CHAT_DISPLAY) && (ENABLE_CHAT_DISPLAY == 1)
+    app_display_send_msg(TY_DISPLAY_TP_ASSISTANT_MSG, (uint8_t *)response, strlen(response));
+#else
+    PR_NOTICE("WORD LEARNER: %s", response);
+#endif
+
+    __app_word_learner_tts_or_note(response);
+}
+
 static OPERATE_RET __app_chat_bot_enable(uint8_t enable)
 {
     if (sg_chat_bot.is_enable == enable) {

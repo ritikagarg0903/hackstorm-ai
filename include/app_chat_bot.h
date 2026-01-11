@@ -47,6 +47,13 @@ OPERATE_RET app_chat_bot_init(void);
 uint8_t app_chat_bot_get_enable(void);
 
 /**
+ * @brief Handle a word-learner response string for display/audio output.
+ *
+ * @param response - Null-terminated response string to present to the user.
+ */
+void app_chat_bot_handle_word_learner_response(const char *response);
+
+/**
  * @brief Plays an alert sound based on the specified alert type.
  *
  * @param type - The type of alert to play, defined by the APP_ALERT_TYPE_E enum.
