@@ -16,6 +16,8 @@
 
 #if defined(ENABLE_GUI_WECHAT) && (ENABLE_GUI_WECHAT == 1)
 
+#include <stdio.h>
+
 #include "ui_display.h"
 
 #include "font_awesome_symbols.h"
@@ -594,6 +596,73 @@ void ui_set_status_bar_pad(int32_t value)
 
     lv_obj_set_style_pad_left(sg_ui.ui.status_bar, value, 0);
     lv_obj_set_style_pad_right(sg_ui.ui.status_bar, value, 0);
+}
+
+void ui_set_word_learner_card(const WORD_LEARNER_DISPLAY_T *card)
+{
+    if (sg_ui.ui.content == NULL || card == NULL) {
+        return;
+    }
+
+    uint32_t child_count = lv_obj_get_child_cnt(sg_ui.ui.content);
+    if (child_count >= MAX_MASSAGE_NUM) {
+        lv_obj_t *first_child = lv_obj_get_child(sg_ui.ui.content, 0);
+        if (first_child) {
+            lv_obj_del(first_child);
+        }
+    }
+
+    lv_obj_t *msg_cont = lv_obj_create(sg_ui.ui.content);
+    lv_obj_remove_style_all(msg_cont);
+    lv_obj_set_size(msg_cont, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_style_pad_ver(msg_cont, 6, 0);
+    lv_obj_set_style_pad_column(msg_cont, 10, 0);
+
+    lv_obj_t *avatar = lv_obj_create(msg_cont);
+    lv_obj_set_style_text_font(avatar, sg_ui.font.icon, 0);
+    lv_obj_add_style(avatar, &sg_ui.ui.style_avatar, 0);
+    lv_obj_set_size(avatar, 40, 40);
+    lv_obj_align(avatar, LV_ALIGN_TOP_LEFT, 0, 0);
+
+    lv_obj_t *icon = lv_label_create(avatar);
+    lv_label_set_text(icon, FONT_AWESOME_USER_ROBOT);
+    lv_obj_center(icon);
+
+    lv_obj_t *bubble = lv_obj_create(msg_cont);
+    lv_obj_set_width(bubble, LV_PCT(80));
+    lv_obj_set_height(bubble, LV_SIZE_CONTENT);
+    lv_obj_add_style(bubble, &sg_ui.ui.style_ai_bubble, 0);
+    lv_obj_align_to(bubble, avatar, LV_ALIGN_OUT_RIGHT_TOP, 10, 0);
+
+    lv_obj_set_scrollbar_mode(bubble, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_scroll_dir(bubble, LV_DIR_NONE);
+
+    lv_obj_t *text_cont = lv_obj_create(bubble);
+    lv_obj_remove_style_all(text_cont);
+    lv_obj_set_size(text_cont, LV_PCT(100), LV_SIZE_CONTENT);
+    lv_obj_set_flex_flow(text_cont, LV_FLEX_FLOW_COLUMN);
+
+    lv_obj_t *title = lv_label_create(text_cont);
+    lv_label_set_text(title, WORD_LEARNER_TITLE);
+    lv_obj_set_width(title, LV_PCT(100));
+
+    char content[512];
+    snprintf(content, sizeof(content),
+             "%s %s\n%s %s\n%s %s\n%s %s\n%s %s\n%s %s",
+             WORD_LEARNER_WORD_LABEL, card->word,
+             WORD_LEARNER_PART_OF_SPEECH_LABEL, card->part_of_speech,
+             WORD_LEARNER_DIFFICULTY_LABEL, card->difficulty,
+             WORD_LEARNER_MEANING_LABEL, card->meaning,
+             WORD_LEARNER_SENTENCE_LABEL, card->sample_sentence,
+             WORD_LEARNER_SPELLING_LABEL, card->spelling);
+
+    lv_obj_t *label = lv_label_create(text_cont);
+    lv_label_set_text(label, content);
+    lv_obj_set_width(label, LV_PCT(100));
+    lv_label_set_long_mode(label, LV_LABEL_LONG_WRAP);
+
+    lv_obj_scroll_to_view_recursive(msg_cont, LV_ANIM_ON);
+    lv_obj_update_layout(sg_ui.ui.content);
 }
 
 #endif

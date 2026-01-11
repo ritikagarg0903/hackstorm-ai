@@ -219,6 +219,11 @@ static void __app_display_msg_handle(DISPLAY_MSG_T *msg_data)
     case TY_DISPLAY_TP_CHAT_MODE: {
         ui_set_chat_mode(msg_data->data);
     } break;
+    case TY_DISPLAY_TP_WORD_LEARNER_CARD: {
+        if (msg_data->data) {
+            ui_set_word_learner_card((const WORD_LEARNER_DISPLAY_T *)msg_data->data);
+        }
+    } break;
     default: {
         PR_ERR("Invalid display type: %d", msg_data->type);
     } break;

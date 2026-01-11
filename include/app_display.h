@@ -63,9 +63,19 @@ typedef enum {
     TY_DISPLAY_TP_NOTIFICATION,
     TY_DISPLAY_TP_NETWORK,
     TY_DISPLAY_TP_CHAT_MODE,
+    TY_DISPLAY_TP_WORD_LEARNER_CARD,
 
     TY_DISPLAY_TP_MAX
 } TY_DISPLAY_TYPE_E;
+
+typedef struct {
+    char word[32];
+    char meaning[160];
+    char sample_sentence[200];
+    char spelling[64];
+    char part_of_speech[24];
+    char difficulty[16];
+} WORD_LEARNER_DISPLAY_T;
 
 /***********************************************************
 ********************function declaration********************
